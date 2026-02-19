@@ -67,7 +67,9 @@ export const useAudio = (currentSong: Song, activeInstrumentCount: number) => {
         const sounds = soundsRef.current;
 
         // Stop anything playing
-        await Promise.all(Object.values(sounds).map(s => s.stopAsync()));
+        await Promise.all(Object.values(sounds).map(async s => {
+            try { await s.stopAsync(); } catch (e) { }
+        }));
 
         // Set volumes
         const setConfigPromises = currentSong.tracks.map(async (track, index) => {
@@ -76,20 +78,24 @@ export const useAudio = (currentSong: Song, activeInstrumentCount: number) => {
 
             // Mute inactive tracks, unmute active ones
             const volume = index < activeInstrumentCount ? 1.0 : 0.0;
-            await sound.setVolumeAsync(volume);
-            await sound.setPositionAsync(0);
+            try {
+                await sound.setVolumeAsync(volume);
+                await sound.setPositionAsync(0);
+            } catch (e) { }
         });
 
         await Promise.all(setConfigPromises);
 
         // Play all simultaneously to keep sync
-        await Promise.all(Object.values(sounds).map(s => s.playAsync()));
+        await Promise.all(Object.values(sounds).map(async s => {
+            try { await s.playAsync(); } catch (e) { }
+        }));
         setIsPlaying(true);
 
         // Stop after 10s
         setTimeout(async () => {
+            if (!soundsRef.current) return;
             await Promise.all(Object.values(sounds).map(async (s) => {
-                // Check status properly in a real app, strict mode might have issues if already unloaded
                 try {
                     await s.stopAsync();
                 } catch (e) {
@@ -103,6 +109,8 @@ export const useAudio = (currentSong: Song, activeInstrumentCount: number) => {
 
     const stop = useCallback(async () => {
         const sounds = soundsRef.current;
+        if (!sounds) return;
+
         await Promise.all(Object.values(sounds).map(async (s) => {
             try {
                 await s.stopAsync();
