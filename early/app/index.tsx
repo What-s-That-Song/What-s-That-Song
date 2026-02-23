@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, Pressable, Image, Animated, Easing } from "react-native";
+import { useEffect, useRef } from "react";
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -6,6 +7,84 @@ import { BackgroundDecoration } from '@/components/BackgroundDecoration';
 
 export default function WelcomeScreen() {
     const router = useRouter();
+    const noteBounce = useRef(new Animated.Value(0)).current;
+    const orangeWave = useRef(new Animated.Value(0)).current;
+    const blueWave = useRef(new Animated.Value(0)).current;
+    const playScale = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        const noteAnimation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(noteBounce, {
+                    toValue: -10,
+                    duration: 600,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(noteBounce, {
+                    toValue: 0,
+                    duration: 600,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+
+        noteAnimation.start();
+
+        return () => {
+            noteAnimation.stop();
+        };
+    }, [noteBounce]);
+
+    useEffect(() => {
+        const createWaveAnimation = (value: Animated.Value, initialDelay: number) =>
+            Animated.loop(
+                Animated.sequence([
+                    Animated.delay(initialDelay),
+                    Animated.timing(value, {
+                        toValue: 1,
+                        duration: 400,
+                        easing: Easing.inOut(Easing.sin),
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(value, {
+                        toValue: -1,
+                        duration: 400,
+                        easing: Easing.inOut(Easing.sin),
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(value, {
+                        toValue: 0,
+                        duration: 400,
+                        easing: Easing.inOut(Easing.sin),
+                        useNativeDriver: true,
+                    }),
+                    Animated.delay(1200),
+                ])
+            );
+
+        const orangeAnim = createWaveAnimation(orangeWave, 0);
+        const blueAnim = createWaveAnimation(blueWave, 400);
+
+        orangeAnim.start();
+        blueAnim.start();
+
+        return () => {
+            orangeAnim.stop();
+            blueAnim.stop();
+        };
+    }, [orangeWave, blueWave]);
+
+    const animatePlayScale = (toValue: number) => {
+        Animated.spring(playScale, {
+            toValue,
+            useNativeDriver: true,
+            friction: 6,
+            tension: 150,
+        }).start();
+    };
+
+    const handlePlayHoverIn = () => animatePlayScale(1.08);
+    const handlePlayHoverOut = () => animatePlayScale(1);
 
     return (
         <View style={styles.container}>
@@ -14,28 +93,82 @@ export default function WelcomeScreen() {
 
             {/* Decoratiive Waves (Simulated with simple views for now, ideally SVGs) */}
             <View style={styles.waveContainer}>
-                <View style={styles.waveLineOrange} />
-                <View style={styles.waveLineBlue} />
+                <Animated.View
+                    style={[
+                        styles.waveLineOrange,
+                        {
+                            transform: [
+                                { rotate: '-10deg' },
+                                { translateX: -20 },
+                                {
+                                    translateY: orangeWave.interpolate({
+                                        inputRange: [-1, 0, 1],
+                                        outputRange: [-8, 0, 8],
+                                    }),
+                                },
+                                {
+                                    scaleY: orangeWave.interpolate({
+                                        inputRange: [-1, 0, 1],
+                                        outputRange: [1.05, 1, 1.08],
+                                    }),
+                                },
+                            ],
+                        },
+                    ]}
+                />
+                <Animated.View
+                    style={[
+                        styles.waveLineBlue,
+                        {
+                            transform: [
+                                { rotate: '-10deg' },
+                                { translateX: -10 },
+                                {
+                                    translateY: blueWave.interpolate({
+                                        inputRange: [-1, 0, 1],
+                                        outputRange: [-6, 0, 6],
+                                    }),
+                                },
+                                {
+                                    scaleY: blueWave.interpolate({
+                                        inputRange: [-1, 0, 1],
+                                        outputRange: [1.03, 1, 1.08],
+                                    }),
+                                },
+                            ],
+                        },
+                    ]}
+                />
             </View>
 
             <View style={styles.content}>
-                <View style={styles.iconContainer}>
+                <Animated.View
+                    style={[
+                        styles.iconContainer,
+                        { transform: [{ translateY: noteBounce }] },
+                    ]}
+                >
                     {/* Musical Note Representation */}
                     <Text style={styles.musicNote}>♪</Text>
-                </View>
+                </Animated.View>
 
                 <View style={styles.titleContainer}>
                     <Text style={styles.title}>WHAT'S THAT</Text>
                     <Text style={styles.titleAccent}>SONG?</Text>
                 </View>
 
-                <TouchableOpacity
+                <Pressable
                     style={styles.playButton}
                     onPress={() => router.push('/login')}
-                    activeOpacity={0.8}
+                    onHoverIn={handlePlayHoverIn}
+                    onHoverOut={handlePlayHoverOut}
+                    onPressIn={handlePlayHoverIn}
+                    onPressOut={handlePlayHoverOut}
                 >
-                    <Text style={styles.playText}>PLAY</Text>
-                </TouchableOpacity>
+                    <Animated.View style={{ transform: [{ scale: playScale }] }}>
+                        <Text style={styles.playText}>PLAY</Text>
+                    </Animated.View>
+                </Pressable>
             </View>
         </View>
     );
@@ -61,7 +194,6 @@ const styles = StyleSheet.create({
         height: 8,
         width: '120%',
         backgroundColor: '#F29F41', // Orange
-        transform: [{ rotate: '-10deg' }, { translateX: -20 }],
         marginBottom: 20,
         borderRadius: 4,
     },
@@ -69,7 +201,6 @@ const styles = StyleSheet.create({
         height: 8,
         width: '120%',
         backgroundColor: '#5C95C6', // Light Blue
-        transform: [{ rotate: '-10deg' }, { translateX: -10 }],
         borderRadius: 4,
     },
     content: {
