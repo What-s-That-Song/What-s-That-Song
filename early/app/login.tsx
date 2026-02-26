@@ -17,37 +17,37 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleAuth = () => {
+    const handleAuth = async () => {
         if (!email || !password) return;
         setLoading(true);
 
-        setTimeout(() => {
-            try {
-                if (isRegistering) {
-                    if (!name) {
-                        alert("Please enter your name.");
-                        setLoading(false);
-                        return;
-                    }
-                    createUser(email, password, name);
-                    // Auto login after register
-                    const user = getUserByEmail(email);
-                    router.replace({ pathname: '/avatar', params: { userType: 'user', userId: user.id } });
-                } else {
-                    const user = (getUserByEmail(email) as any);
-                    if (user && user.password === password) {
-                        router.replace({ pathname: '/avatar', params: { userType: 'user', userId: user.id } });
-                    } else {
-                        alert("Invalid email or password.");
-                    }
+        try {
+            if (isRegistering) {
+                if (!name) {
+                    alert("Please enter your name.");
+                    setLoading(false);
+                    return;
                 }
-            } catch (e) {
-                console.error(e);
-                alert("Authentication failed. Email might be in use.");
-            } finally {
-                setLoading(false);
+                await createUser(email, password, name);
             }
-        }, 500);
+
+            const user = await getUserByEmail(email);
+            if (user) {
+                // On ne compare plus le mot de passe côté client, il est déjà vérifié côté backend au login.
+                router.replace({ pathname: '/avatar', params: { userType: 'user', userId: user.id } });
+            } else {
+                alert("Invalid email or password.");
+            }
+        } catch (e: any) {
+            console.error(e);
+            const message =
+                typeof e?.message === 'string' && e.message.includes('UNIQUE constraint failed')
+                    ? 'Cet email est déjà utilisé. Choisis-en un autre.'
+                    : 'Authentication failed. Please try again.';
+            alert(message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleGuest = () => {

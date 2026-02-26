@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch } from 'rea
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { BackgroundDecoration } from '../../components/BackgroundDecoration';
-import { db, createUser, updateUser } from '../../database/db';
+import { createUser, updateUser, getAllUsers } from '../../database/db';
 
 export default function EditUser() {
     const router = useRouter();
@@ -18,18 +18,24 @@ export default function EditUser() {
 
     useEffect(() => {
         if (isEditing) {
-            const user = db.getAllSync('SELECT * FROM users WHERE id = ?', [params.id])[0] as any;
-            if (user) {
-                setName(user.name);
-                setEmail(user.email);
-                setPassword(user.password);
-                setScore(user.highScore.toString());
-                setIsAdmin(user.role === 'admin');
-            }
+            (async () => {
+                try {
+                    const users = await getAllUsers();
+                    const user = users.find((u) => u.id === Number(params.id));
+                    if (user) {
+                        setName(user.name);
+                        setEmail(user.email);
+                        setScore(user.highScore.toString());
+                        setIsAdmin(user.role === 'admin');
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            })();
         }
-    }, [params.id]);
+    }, [isEditing, params.id]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!name || !email || !password) return;
 
         const role = isAdmin ? 'admin' : 'user';
@@ -37,16 +43,18 @@ export default function EditUser() {
 
         try {
             if (isEditing) {
-                updateUser(Number(params.id), name, email, role, highScore);
-                // Also update password if needed (separate query for simplicity in this demo I didn't verify password change logic strictly)
-                db.runSync('UPDATE users SET password = ? WHERE id = ?', [password, params.id]);
+                await updateUser(Number(params.id), name, email, role, highScore);
             } else {
-                createUser(email, password, name, role);
+                await createUser(email, password, name, role);
             }
             router.back();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Error saving user. Email might be taken.");
+            const message =
+                typeof error?.message === 'string' && error.message.includes('UNIQUE constraint failed')
+                    ? 'Cet email est déjà utilisé. Choisis-en un autre.'
+                    : "Erreur lors de l'enregistrement de l'utilisateur.";
+            alert(message);
         }
     };
 

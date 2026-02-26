@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator }
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { BackgroundDecoration } from '../../components/BackgroundDecoration';
-import { getAllUsers, deleteUser, initDatabase } from '../../database/db';
+import { getAllUsers, deleteUser } from '../../database/db';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function AdminDashboard() {
@@ -11,9 +11,9 @@ export default function AdminDashboard() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const loadUsers = () => {
+    const loadUsers = async () => {
         try {
-            const allUsers = getAllUsers();
+            const allUsers = await getAllUsers();
             setUsers(allUsers);
         } catch (error) {
             console.error(error);
@@ -28,10 +28,14 @@ export default function AdminDashboard() {
         }, [])
     );
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         // Simple confirm (in real app use Alert)
-        deleteUser(id);
-        loadUsers();
+        try {
+            await deleteUser(id);
+            loadUsers();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const handleEdit = (user: any) => {
