@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Audio } from 'expo-av';
 import { Song } from '../constants/Songs';
 
-export const useAudio = (currentSong: Song, activeInstrumentCount: number) => {
+export const useAudio = (currentSong: Song | undefined, activeInstrumentCount: number) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const soundsRef = useRef<{ [key: string]: Audio.Sound }>({});
@@ -25,6 +25,7 @@ export const useAudio = (currentSong: Song, activeInstrumentCount: number) => {
     useEffect(() => {
         const loadSounds = async () => {
             await unloadSounds();
+            if (!currentSong) return;
 
             try {
                 // Enable audio playback in silent mode
@@ -62,7 +63,7 @@ export const useAudio = (currentSong: Song, activeInstrumentCount: number) => {
     }, [currentSong]);
 
     const playRound = useCallback(async () => {
-        if (!isLoaded) return;
+        if (!isLoaded || !currentSong) return;
 
         const sounds = soundsRef.current;
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { BackgroundDecoration } from '@/components/BackgroundDecoration';
@@ -15,30 +15,22 @@ const AVATAR_COLORS = [
     '#9B59B6', // Purple
 ];
 
-import { db } from '@/database/db';
+import { getMe } from '@/database/db';
 
 export default function AvatarScreen() {
     const router = useRouter();
-    const params = useLocalSearchParams();
     const [selectedColor, setSelectedColor] = useState(AVATAR_COLORS[0]);
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
-        if (params.userType === 'user' && params.userId) {
-            try {
-                const user = db.getAllSync('SELECT role FROM users WHERE id = ?', [params.userId])[0] as any;
-                if (user && user.role === 'admin') {
-                    setIsAdmin(true);
-                }
-            } catch (e) {
-                console.error("Error checking admin status:", e);
-            }
-        }
-    }, [params]);
+        // Le rôle vient de la session vérifiée par le serveur, pas de l'URL
+        getMe()
+            .then((me) => setIsAdmin(me?.role === 'admin'))
+            .catch((e) => console.error("Error checking admin status:", e));
+    }, []);
 
     const handleStartGame = () => {
-        // Pass userType & userId param to Game
-        router.replace({ pathname: '/game', params: { userType: params.userType, userId: params.userId } });
+        router.replace('/game');
     };
 
     const handleAdmin = () => {

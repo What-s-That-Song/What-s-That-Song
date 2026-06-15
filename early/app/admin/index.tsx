@@ -3,13 +3,20 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator }
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { BackgroundDecoration } from '../../components/BackgroundDecoration';
-import { getAllUsers, deleteUser } from '../../database/db';
+import { getAllUsers, deleteUser, getMe } from '../../database/db';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function AdminDashboard() {
     const router = useRouter();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Garde-fou UX : les routes API sont de toute façon réservées aux admins
+    useEffect(() => {
+        getMe().then((me) => {
+            if (me?.role !== 'admin') router.replace('/');
+        }).catch(() => router.replace('/'));
+    }, []);
 
     const loadUsers = async () => {
         try {
@@ -53,9 +60,14 @@ export default function AdminDashboard() {
 
             <View style={styles.header}>
                 <Text style={styles.title}>ADMIN DASHBOARD</Text>
-                <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-                    <Text style={styles.addButtonText}>+ ADD USER</Text>
-                </TouchableOpacity>
+                <View style={styles.headerActions}>
+                    <TouchableOpacity style={styles.songsButton} onPress={() => router.push('/admin/songs')}>
+                        <Text style={styles.songsButtonText}>♪ SONGS</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
+                        <Text style={styles.addButtonText}>+ ADD USER</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <View style={styles.tableHeader}>
@@ -114,8 +126,11 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     title: { color: '#F29F41', fontSize: 24, fontWeight: '900' },
+    headerActions: { flexDirection: 'row', gap: 10 },
     addButton: { backgroundColor: '#5C95C6', padding: 10, borderRadius: 8 },
     addButtonText: { color: '#0F2441', fontWeight: 'bold' },
+    songsButton: { backgroundColor: '#F29F41', padding: 10, borderRadius: 8 },
+    songsButtonText: { color: '#0F2441', fontWeight: 'bold' },
 
     tableHeader: {
         flexDirection: 'row',

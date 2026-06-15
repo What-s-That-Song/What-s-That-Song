@@ -33,6 +33,9 @@ func initDatabase() error {
 	if _, err := db.Exec(`PRAGMA journal_mode = WAL;`); err != nil {
 		return err
 	}
+	if _, err := db.Exec(`PRAGMA foreign_keys = ON;`); err != nil {
+		return err
+	}
 
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
@@ -42,6 +45,36 @@ func initDatabase() error {
 			name TEXT NOT NULL,
 			role TEXT DEFAULT 'user',
 			highScore INTEGER DEFAULT 0
+		);
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS songs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			title TEXT NOT NULL,
+			artist TEXT NOT NULL,
+			createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+		);
+		CREATE TABLE IF NOT EXISTS tracks (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			songId INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+			name TEXT NOT NULL,
+			position INTEGER NOT NULL,
+			filePath TEXT NOT NULL
+		);
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS sessions (
+			token TEXT PRIMARY KEY,
+			userId INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
 	`)
 	if err != nil {

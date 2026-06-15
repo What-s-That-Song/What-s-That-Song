@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nix search *)",
+      "Bash(nix eval *)",
+      "Bash(nix run *)",
+      "Bash(go build *)",
+      "Bash(go vet *)",
+      "Bash(_ZO_DOCTOR=0 nix develop *)",
+      "Bash(_ZO_DOCTOR=0 nix flake update)",
+      "Bash(python3 -)",
+      "Bash(_ZO_DOCTOR=0 python3 *)",
+      "Bash(echo \"TSC exit: $?\")",
+      "Bash(sqlite3 early/database/musicquiz.db \"SELECT id, title, artist FROM songs; SELECT COUNT\\(*\\) FROM tracks;\")",
+      "Bash(nix develop *)",
+      "Bash(./whats-that-song-backend)",
+      "Bash(curl -s http://localhost:8080/songs)",
+      "Bash(curl -s -o /dev/null -w 'media status: %{http_code}, %{size_download} bytes\\\\n' http://localhost:8080/media/songs/1/drums.mp3)",
+      "Bash(pkill -f whats-that-song-backend)",
+      "Skill(run)",
+      "Bash(curl *)",
+      "Read(//tmp/**)",
+      "Bash(python3 -m json.tool)"
+    ]
+  }
+}

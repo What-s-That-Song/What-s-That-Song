@@ -14,9 +14,14 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            nodejs_20
+            nodejs_22
             yarn
             watchman # Important pour React Native
+
+            # Backend Go + pipeline audio
+            go
+            ffmpeg
+            demucs-rs # Séparation des instruments (HTDemucs v4)
           ];
 
           shellHook = ''

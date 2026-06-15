@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import { BackgroundDecoration } from '@/components/BackgroundDecoration';
 
-import { getUserByEmail, createUser } from '@/database/db';
+import { login, logout, createUser } from '@/database/db';
 
 const { width } = Dimensions.get('window');
 
@@ -31,13 +31,10 @@ export default function LoginScreen() {
                 await createUser(email, password, name);
             }
 
-            const user = await getUserByEmail(email);
-            if (user) {
-                // On ne compare plus le mot de passe côté client, il est déjà vérifié côté backend au login.
-                router.replace({ pathname: '/avatar', params: { userType: 'user', userId: user.id } });
-            } else {
-                alert("Invalid email or password.");
-            }
+            // Le backend vérifie le mot de passe et renvoie un token de session ;
+            // l'identité n'apparaît plus dans l'URL.
+            await login(email, password);
+            router.replace('/avatar');
         } catch (e: any) {
             console.error(e);
             const message =
@@ -50,9 +47,10 @@ export default function LoginScreen() {
         }
     };
 
-    const handleGuest = () => {
-        // Pass userType='guest' param
-        router.replace({ pathname: '/avatar', params: { userType: 'guest', userId: -1 } });
+    const handleGuest = async () => {
+        // Invité = aucune session
+        await logout();
+        router.replace('/avatar');
     };
 
     return (
